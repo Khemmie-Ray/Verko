@@ -1,0 +1,8 @@
+{
+  "VerkoModule": {
+    "verifier": "0x8B3ecF29f52c6C4943dbAD4f34D8b79077C238dd",
+    "gDollarToken": "0x0000000000000000000000000000000000000001",
+    "arbFeePerVote": "10000000000000000000",
+    "platformFeeBps": 600
+  }
+}

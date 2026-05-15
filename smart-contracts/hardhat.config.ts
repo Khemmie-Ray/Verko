@@ -48,15 +48,14 @@ export default defineConfig({
       accounts: [configVariable("SEPOLIA_PRIVATE_KEY")],
     },
 
-    // Celo Alfajores Testnet 
-    alfajores: {
-      type: "http",
-      chainType: "l1",
-      url: "https://alfajores-forno.celo-testnet.org",
-      accounts: [configVariable("CELO_PRIVATE_KEY")],
-      gasPrice: 1_000_000_000,
-    },
-
+    // Celo Sepolia 
+  celoSepolia: {
+  type: "http",
+  chainType: "l1",
+  url: "https://celo-sepolia.drpc.org",
+  accounts: [configVariable("CELO_PRIVATE_KEY")],
+  gasPrice: 1_000_000_000,
+},
     // Celo Mainnet
     celo: {
       type: "http",

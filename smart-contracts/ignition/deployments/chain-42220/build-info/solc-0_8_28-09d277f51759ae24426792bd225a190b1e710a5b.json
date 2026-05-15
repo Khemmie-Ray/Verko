@@ -1,0 +1,50 @@
+{
+  "_format": "hh3-sol-build-info-1",
+  "id": "solc-0_8_28-09d277f51759ae24426792bd225a190b1e710a5b",
+  "solcVersion": "0.8.28",
+  "solcLongVersion": "0.8.28+commit.7893614a",
+  "compilerType": "solc",
+  "toolVersions": {
+    "hardhat": "3.4.5"
+  },
+  "userSourceNameMap": {
+    "contracts/WorkerReputation.sol": "project/contracts/WorkerReputation.sol"
+  },
+  "input": {
+    "language": "Solidity",
+    "settings": {
+      "evmVersion": "cancun",
+      "optimizer": {
+        "enabled": true,
+        "runs": 200
+      },
+      "outputSelection": {
+        "*": {
+          "": [
+            "ast"
+          ],
+          "*": [
+            "abi",
+            "evm.bytecode.linkReferences",
+            "evm.bytecode.object",
+            "evm.bytecode.opcodes",
+            "evm.bytecode.sourceMap",
+            "evm.deployedBytecode.immutableReferences",
+            "evm.deployedBytecode.linkReferences",
+            "evm.deployedBytecode.object",
+            "evm.deployedBytecode.opcodes",
+            "evm.deployedBytecode.sourceMap",
+            "evm.methodIdentifiers"
+          ]
+        }
+      },
+      "remappings": [],
+      "viaIR": true
+    },
+    "sources": {
+      "project/contracts/WorkerReputation.sol": {
+        "content": "// SPDX-License-Identifier: MIT\npragma solidity ^0.8.28;\n\ncontract WorkerReputation {\n   \n    // Types\n    struct WorkerStats {\n        uint256 tasksCompleted;\n        uint256 tasksAttempted;   \n        uint256 totalEarned;      \n        uint8   tier;             \n        uint256 tokenId;         \n    }\n\n   \n    // State\n    address public owner;\n    address public escrow;       \n\n    uint256 private _tokenCounter;\n\n    mapping(address => WorkerStats) public stats;\n    mapping(uint256 => address)     public tokenOwner;   \n    mapping(address => uint256)     public workerToken;  \n\n  \n    // Events\n    event ReputationUpdated(address indexed worker, uint256 completed, uint8 tier);\n    event NFTMinted(address indexed worker, uint256 tokenId);\n    event TierUpgraded(address indexed worker, uint8 newTier);\n    event EscrowSet(address indexed escrow);\n\n    \n    // Errors\n    error NotOwner();\n    error NotEscrow();\n    error NonTransferable();\n    error ZeroAddress();\n\n   \n    // Constructor\n    constructor() {\n        owner = msg.sender;\n    }\n\n   \n    // Modifiers\n    modifier onlyOwner() {\n        if (msg.sender != owner) revert NotOwner();\n        _;\n    }\n\n    modifier onlyEscrow() {\n        if (msg.sender != escrow) revert NotEscrow();\n        _;\n    }\n\n   \n    // Admin\n    function setEscrow(address _escrow) external onlyOwner {\n        if (_escrow == address(0)) revert ZeroAddress();\n        escrow = _escrow;\n        emit EscrowSet(_escrow);\n    }\n\n   \n    function recordCompletion(\n        address worker,\n        uint256 taskId,\n        bool    approved\n    ) external onlyEscrow {\n        WorkerStats storage s = stats[worker];\n\n        s.tasksAttempted++;\n        if (approved) {\n            s.tasksCompleted++;\n        }\n\n        // Mint soul-bound NFT on first completion\n        if (s.tokenId == 0 && s.tasksCompleted >= 1) {\n            _mintNFT(worker, s);\n        }\n\n        // Recalculate tier\n        uint8 oldTier = s.tier;\n        s.tier = _calculateTier(s.tasksCompleted, s.tasksAttempted);\n\n        emit ReputationUpdated(worker, s.tasksCompleted, s.tier);\n\n        if (s.tier > oldTier) {\n            emit TierUpgraded(worker, s.tier);\n        }\n\n        // Suppress unused variable warning\n        taskId;\n    }\n\n    function getStats(address worker) external view returns (WorkerStats memory) {\n        return stats[worker];\n    }\n\n    function approvalRate(address worker) external view returns (uint256 bps) {\n        WorkerStats storage s = stats[worker];\n        if (s.tasksAttempted == 0) return 0;\n        return (s.tasksCompleted * 10_000) / s.tasksAttempted;\n    }\n\n    function getTier(address worker) external view returns (uint8) {\n        return stats[worker].tier;\n    }\n\n    function ownerOf(uint256 tokenId) external view returns (address) {\n        return tokenOwner[tokenId];\n    }\n\n    \n    function _mintNFT(address worker, WorkerStats storage s) internal {\n        uint256 id = ++_tokenCounter;\n        s.tokenId = id;\n        tokenOwner[id] = worker;\n        workerToken[worker] = id;\n        emit NFTMinted(worker, id);\n    }\n\n    function _calculateTier(\n        uint256 completed,\n        uint256 attempted\n    ) internal pure returns (uint8) {\n        if (completed == 0 || attempted == 0) return 0;\n\n        uint256 rateBps = (completed * 10_000) / attempted;\n\n        if (completed >= 50 && rateBps >= 8_000) return 3;\n        if (completed >= 20 && rateBps >= 7_000) return 2;\n        if (completed >= 5  && rateBps >= 6_000) return 1;\n        return 0;\n    }\n\n    \n    function transferFrom(address, address, uint256) external pure {\n        revert NonTransferable();\n    }\n}\n"
+      }
+    }
+  }
+}
